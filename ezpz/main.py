@@ -75,7 +75,7 @@ def pz(spos, ssize, dpos, dsize, n, force_ratio=False):
         if force_ratio:
             rs_w, rs_h = ratio_round(ss_w, ss_h, ratio_w, ratio_h)
         else:
-            rs_w, rs_h = ratio_w, ratio_h
+            rs_w, rs_h = ss_w, ss_h
         yield map(int, map(math.floor, (sp_x, sp_y, rs_w, rs_h)))
         sp_x += linear_ease(pdiff_x, n, i)
         sp_y += linear_ease(pdiff_y, n, i)
@@ -126,8 +126,9 @@ def main():
     x = 0
     sys.stdout.write(progress_bar(80, 0))
     sys.stdout.flush()
-    for _ in pool.imap_unordered(process,
-            enumerate(pz(args.spos, args.ssize, args.epos, args.esize, n)), 5):
+    iterator = (lambda f, l: pool.imap_unordered(f, l, 5)) if args.parallel > 1 else map
+    for _ in iterator(process,
+            enumerate(pz(args.spos, args.ssize, args.epos, args.esize, n))):
         x += 1
         sys.stdout.write(progress_bar(80, 100.0 * x / n))
         sys.stdout.flush()
