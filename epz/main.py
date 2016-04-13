@@ -91,42 +91,49 @@ def progress_bar(width, percent, char='#'):
     return '\r[ %s%s ] %i ' % (char*filled, '-'*(width-filled), percent) + r'%'
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Crop sequence of jpg images for pan-zoomed timelapse.')
-    parser.add_argument('spos', action=SizeAction, help="Start position, XxY from top left")
-    parser.add_argument('ssize', action=SizeAction, help="Start size, WidthxHeight")
-    parser.add_argument('epos', action=SizeAction, help="End position, XxY from top left")
-    parser.add_argument('esize', action=SizeAction, help="End size, WidthxHeight")
-    parser.add_argument('--resize', metavar='size', action=SizeAction, help="Resize all to this WidthxHeight", default=None)
-    parser.add_argument('--parallel', metavar='P', help="Number of processes to run in parallel", default=1, type=int)
-    parser.add_argument('--force-aspect', action='store_true', help="Whether to force all frames to same aspect ratio", default=False)
-    parser.add_argument('--working-dir', action='store_true', help="Where to find images", default=".")
-    args = parser.parse_args()
+def process(v):
+    i, (bb_x, bb_y, bb_w, bb_h) = v
+    with Image(filename=files[i]) as image:
+        image.format = 'jpeg'
+        image.crop(bb_x, bb_y, width=bb_w, height=bb_h)
+        if args.resize:
+            image.resize(*args.resize)
+        image.save(filename=os.path.join(od, files[i]))
 
-    wd = args.working_dir
-    od = os.path.join(wd, "pz_out")
+parser = argparse.ArgumentParser(description='Crop sequence of jpg images for pan-zoomed timelapse.')
+parser.add_argument('spos', action=SizeAction, help="Start position, XxY from top left")
+parser.add_argument('ssize', action=SizeAction, help="Start size, WidthxHeight")
+parser.add_argument('epos', action=SizeAction, help="End position, XxY from top left")
+parser.add_argument('esize', action=SizeAction, help="End size, WidthxHeight")
+parser.add_argument('--resize', metavar='size', action=SizeAction, help="Resize all to this WidthxHeight", default=None)
+parser.add_argument('--parallel', metavar='P', help="Number of processes to run in parallel", default=1, type=int)
+parser.add_argument('--force-aspect', action='store_true', help="Whether to force all frames to same aspect ratio", default=False)
+parser.add_argument('--working-dir', action='store_true', help="Where to find images", default=".")
+args = parser.parse_args()
+
+wd = args.working_dir
+od = os.path.join(wd, "pz_out")
+files = glob.glob(os.path.join(wd, "*.jpg"))
+files.sort(key=os.path.getmtime)
+n = len(files)
+
+
+def main():
     if not os.path.exists(od):
         os.makedirs(od)
-    files = glob.glob(os.path.join(wd, "*.jpg"))
-    files.sort(key=os.path.getmtime)
-    n = len(files)
-
-    def process((i, (bb_x, bb_y, bb_w, bb_h))):
-        with Image(filename=files[i]) as image:
-            image.format = 'jpeg'
-            image.crop(bb_x, bb_y, width=bb_w, height=bb_h)
-            if args.resize:
-                image.resize(*args.resize)
-            image.save(filename=os.path.join(od, files[i]))
-
     start = time.time()
     pool = Pool(args.parallel)
     x = 0
     sys.stdout.write(progress_bar(80, 0))
+    sys.stdout.flush()
     for _ in pool.imap_unordered(process,
             enumerate(pz(args.spos, args.ssize, args.epos, args.esize, n)), 5):
         x += 1
         sys.stdout.write(progress_bar(80, 100.0 * x / n))
         sys.stdout.flush()
 
-    print "\nFinished processing {} images in {:.2f}s".format(n, time.time() - start)
+    print("\nFinished processing {} images in {:.2f}s".format(n, time.time() - start))
+
+
+if __name__ == '__main__':
+    main()
