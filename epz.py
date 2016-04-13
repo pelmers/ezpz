@@ -4,12 +4,14 @@
 epz.py: Pan-Zoom across all the pictures in a directory.
 Good for timelapse fun.
 '''
-import math
-import os
 import sys
+import os
 import os.path
 import glob
 import argparse
+import math
+import time
+from multiprocessing import Pool
 
 from wand.image import Image
 
@@ -71,19 +73,31 @@ def tpz(spos, ssize, dpos, dsize, n, force_ratio=False):
         ss_h += linear_ease(sdiff_h, n, i)
 
 
-parser = argparse.ArgumentParser(description='Crop sequence of jpg images for pan-zoomed timelapse.')
-# TODO: add start_pos start_size end_pos end_size [resize_size] [force aspect?] [working-dir?]
-parser.add_argument('spos', action=SizeAction, help="Start position, XxY from top left")
-parser.add_argument('ssize', action=SizeAction, help="Start size, WidthxHeight")
-parser.add_argument('epos', action=SizeAction, help="End position, XxY from top left")
-parser.add_argument('esize', action=SizeAction, help="End size, WidthxHeight")
-parser.add_argument('--resize', action=SizeAction, help="Resize all to this WidthxHeight", default=None)
-parser.add_argument('--force-aspect', action='store_true', help="Whether to force all frames to same aspect ratio", default=False)
-parser.add_argument('--working-dir', action='store_true', help="Where to find images", default=".")
+def progress_bar(width, percent, char='#'):
+    """
+    Progress bar with variable width, scales percentage to width
+    Example: [ ####------ ] 42%
+    """
+    if width < 10:
+        return 'bad width'
+    width += -7
+    width += -len(str(percent))
+    filled = int(round((float(width)*(float(percent)/100))))
+    return '\r[ %s%s ] %i ' % (char*filled, '-'*(width-filled), percent) + r'%'
 
-def main():
-    # TODO: use argparse....
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Crop sequence of jpg images for pan-zoomed timelapse.')
+    parser.add_argument('spos', action=SizeAction, help="Start position, XxY from top left")
+    parser.add_argument('ssize', action=SizeAction, help="Start size, WidthxHeight")
+    parser.add_argument('epos', action=SizeAction, help="End position, XxY from top left")
+    parser.add_argument('esize', action=SizeAction, help="End size, WidthxHeight")
+    parser.add_argument('--resize', metavar='size', action=SizeAction, help="Resize all to this WidthxHeight", default=None)
+    parser.add_argument('--parallel', metavar='P', help="Number of processes to run in parallel", default=1, type=int)
+    parser.add_argument('--force-aspect', action='store_true', help="Whether to force all frames to same aspect ratio", default=False)
+    parser.add_argument('--working-dir', action='store_true', help="Where to find images", default=".")
     args = parser.parse_args()
+
     wd = args.working_dir
     od = os.path.join(wd, "pz_out")
     if not os.path.exists(od):
@@ -91,8 +105,8 @@ def main():
     files = glob.glob(os.path.join(wd, "*.jpg"))
     files.sort(key=os.path.getmtime)
     n = len(files)
-    for (i, (bb_x, bb_y, bb_w, bb_h)) in enumerate(
-            tpz(args.spos, args.ssize, args.epos, args.esize, n)):
+
+    def process((i, (bb_x, bb_y, bb_w, bb_h))):
         with Image(filename=files[i]) as image:
             image.format = 'jpeg'
             image.crop(bb_x, bb_y, width=bb_w, height=bb_h)
@@ -100,5 +114,14 @@ def main():
                 image.resize(*args.resize)
             image.save(filename=os.path.join(od, files[i]))
 
-if __name__ == '__main__':
-    main()
+    start = time.time()
+    pool = Pool(args.parallel)
+    x = 0
+    sys.stdout.write(progress_bar(80, 0))
+    for _ in pool.imap_unordered(process,
+            enumerate(tpz(args.spos, args.ssize, args.epos, args.esize, n)), 5):
+        x += 1
+        sys.stdout.write(progress_bar(80, 100.0 * x / n))
+        sys.stdout.flush()
+
+    print "\nFinished processing {} images in {:.2f}s".format(n, time.time() - start)
