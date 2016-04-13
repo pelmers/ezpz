@@ -9,7 +9,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='epz',
+    name='ezpz',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
@@ -20,7 +20,7 @@ setup(
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/pelmers/epz',
+    url='https://github.com/pelmers/ezpz',
 
     # Author details
     author='Peter Elmers',
@@ -62,7 +62,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'epz=epz:epz.main',
+            'ezpz=ezpz:ezpz.main',
         ],
     },
 )

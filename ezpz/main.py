@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 '''
-epz.py: Pan-Zoom across all the pictures in a directory.
+ezpz.py: Pan-Zoom across all the pictures in a directory.
 Good for timelapse fun.
 '''
 import sys

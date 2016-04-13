@@ -1,1 +1,1 @@
-epz: easy pan-zoom.
+ezpz: easy pan-zoom.
