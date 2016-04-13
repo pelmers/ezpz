@@ -62,7 +62,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'ezpz=ezpz:ezpz.main',
+            'ezpz=ezpz:main.main',
         ],
     },
 )
