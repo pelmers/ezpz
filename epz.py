@@ -28,6 +28,8 @@ class SizeAction(argparse.Action):
 
 
 def gcm(a, b):
+    """Find greatest common multiple of (a,b).
+    """
     m = min(a, b)
     for i in range(m, 0, -1):
         if a % i == 0 and b % i == 0:
@@ -35,25 +37,33 @@ def gcm(a, b):
 
 
 def ratio(a, b):
+    """Compute the simplified ratio of a:b.
+    """
     g = gcm(a, b)
     return a / g, b / g
 
 
 def ratio_round(a, b, r_1, r_2):
+    """Find the closest pair of numbers satisfying the ratio r_1:r2 to a:b.
+    """
     amult = float(a) / r_1
     bmult = float(b) / r_2
     tmult = round((amult + bmult) / 2)
     return r_1*tmult, r_2*tmult
 
 
-def tpz(spos, ssize, dpos, dsize, n, force_ratio=False):
+def pz(spos, ssize, dpos, dsize, n, force_ratio=False):
+    """Yield n pan-zoomed (i, (pos, size)) tuples from starting position
+    and size to destination position and size.
+
+    If force_ratio, enforce that all sizes yielded maintain the starting ratio.
+    """
     sp_x, sp_y = spos
     ss_w, ss_h = ssize
     dp_x, dp_y = dpos
     ds_w, ds_h = dsize
     ratio_w, ratio_h = ratio(ss_w, ss_h)
     if force_ratio:
-        print "Asserting equality of input-output ratios: {}x{}".format(ratio_w, ratio_h)
         assert ratio_w, ratio_h == ratio(ds_w, ds_h)
     pdiff_x, pdiff_y = float(dp_x - sp_x), float(dp_y - sp_y)
     sdiff_w, sdiff_h = float(ds_w - ss_w), float(ds_h - ss_h)
@@ -74,14 +84,9 @@ def tpz(spos, ssize, dpos, dsize, n, force_ratio=False):
 
 
 def progress_bar(width, percent, char='#'):
+    """Progress bar with variable width, scales percentage to width
     """
-    Progress bar with variable width, scales percentage to width
-    Example: [ ####------ ] 42%
-    """
-    if width < 10:
-        return 'bad width'
-    width += -7
-    width += -len(str(percent))
+    width -= 7 + len(str(percent))
     filled = int(round((float(width)*(float(percent)/100))))
     return '\r[ %s%s ] %i ' % (char*filled, '-'*(width-filled), percent) + r'%'
 
@@ -119,7 +124,7 @@ if __name__ == '__main__':
     x = 0
     sys.stdout.write(progress_bar(80, 0))
     for _ in pool.imap_unordered(process,
-            enumerate(tpz(args.spos, args.ssize, args.epos, args.esize, n)), 5):
+            enumerate(pz(args.spos, args.ssize, args.epos, args.esize, n)), 5):
         x += 1
         sys.stdout.write(progress_bar(80, 100.0 * x / n))
         sys.stdout.flush()
