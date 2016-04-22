@@ -14,7 +14,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.1.1',
+    version='0.1.2',
 
     description='Easy pan-zoom crop-resizing',
     long_description=long_description,
@@ -33,8 +33,8 @@ setup(
         'Development Status :: 4 - Beta',
 
         # Indicate who your project is intended for
-        'Intended Audience :: Developers',
-        'Topic :: Software Development :: Build Tools',
+        'Intended Audience :: End Users/Desktop',
+        'Topic :: Multimedia :: Graphics',
 
         # Pick your license as you wish (should match "license" above)
         'License :: OSI Approved :: MIT License',
@@ -51,7 +51,7 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords='photography imagemagick development',
+    keywords='photography imagemagick timelapse',
 
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
 

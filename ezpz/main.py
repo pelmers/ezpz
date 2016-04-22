@@ -86,7 +86,7 @@ def pz(spos, ssize, dpos, dsize, n, force_ratio=False):
 def progress_bar(width, percent, char='#'):
     """Progress bar with variable width, scales percentage to width
     """
-    width -= 7 + len(str(percent))
+    width -= 7 + len(str(int(percent)))
     filled = int(round((float(width)*(float(percent)/100))))
     return '\r[ %s%s ] %i ' % (char*filled, '-'*(width-filled), percent) + r'%'
 
